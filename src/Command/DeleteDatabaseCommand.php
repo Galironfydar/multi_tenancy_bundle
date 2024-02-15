@@ -30,7 +30,7 @@ final class DeleteDatabaseCommand extends Command
             ->setAliases(['t:d:d'])
             ->addOption('all', null, InputOption::VALUE_NONE, 'Delete all tenant databases.')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force the deletion of the database(s).')
-            ->addArgument('id', InputOption::VALUE_OPTIONAL, 'The ID of the tenant database to delete.');
+            ->addArgument('id', InputOption::VALUE_OPTIONAL, 'The ID of the tenant database to delete.', null, 'is_int');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -48,7 +48,7 @@ final class DeleteDatabaseCommand extends Command
                 $output->writeln('<error>You must provide an ID or use the --all option.</error>');
                 return Command::FAILURE;
             }
-            $this->deleteDatabaseById($id, $output);
+            $this->deleteDatabaseById((int)$id, $output);
         }
 
         return Command::SUCCESS;
@@ -60,8 +60,10 @@ final class DeleteDatabaseCommand extends Command
         /** @var TenantDbConfigurationInterface $tenantDb */
         foreach ($tenantDbs as $tenantDb) {
             $this->dbService->dropDatabase($tenantDb->getDbName());
-            $output->writeln("Deleted database: {$tenantDb->getDbName()}");
+            $this->registry->getManager()->remove($tenantDb);
+            $output->writeln("Deleted database and configuration: {$tenantDb->getDbName()}");
         }
+        $this->registry->getManager()->flush();
     }
 
     private function deleteDatabaseById(int $id, OutputInterface $output): void
@@ -72,6 +74,8 @@ final class DeleteDatabaseCommand extends Command
             return;
         }
         $this->dbService->dropDatabase($tenantDb->getDbName());
-        $output->writeln("Deleted database: {$tenantDb->getDbName()}");
+        $this->registry->getManager()->remove($tenantDb);
+        $this->registry->getManager()->flush();
+        $output->writeln("Deleted database and configuration: {$tenantDb->getDbName()}");
     }
 }
