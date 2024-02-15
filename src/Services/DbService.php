@@ -156,4 +156,14 @@ class DbService
     {
         return $this->entityManager->getRepository($this->tenantDbListEntity)->findOneBy(['databaseStatus' => DatabaseStatusEnum::DATABASE_CREATED]);
     }
+
+    public function getAllTenantDataBases(): array
+    {
+        return $this->entityManager->getRepository($this->tenantDbListEntity)->findAll();
+    }
+
+    public function getTenantDataBase(int $id): ?TenantDbConfigurationInterface
+    {
+        return $this->entityManager->getRepository($this->tenantDbListEntity)->findOneBy(['dbName' => $databaseName]);
+    }
 }

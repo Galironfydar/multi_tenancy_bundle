@@ -56,16 +56,17 @@ final class DeleteDatabaseCommand extends Command
 
     private function deleteAllDatabases(OutputInterface $output): void
     {
-        $tenantDbs = $this->registry->getRepository(TenantDbConfigurationInterface::class)->findAll();
+        $tenantDbs = $this->dbService->getAllTenantDataBases();
+        /** @var TenantDbConfigurationInterface $tenantDb */
         foreach ($tenantDbs as $tenantDb) {
             $this->dbService->dropDatabase($tenantDb->getDbName());
             $output->writeln("Deleted database: {$tenantDb->getDbName()}");
         }
     }
 
-    private function deleteDatabaseById(string $id, OutputInterface $output): void
+    private function deleteDatabaseById(int $id, OutputInterface $output): void
     {
-        $tenantDb = $this->registry->getRepository(TenantDbConfigurationInterface::class)->find($id);
+        $tenantDb = $this->dbService->getTenantDataBase($id);
         if (!$tenantDb) {
             $output->writeln('<error>Database with provided ID not found.</error>');
             return;
