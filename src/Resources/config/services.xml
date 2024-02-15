@@ -56,5 +56,12 @@
             <argument type="service" id="doctrine.orm.tenant_entity_manager"/>
         </service>
         <service id="Hakam\MultiTenancyBundle\Doctrine\ORM\TenantEntityManager" alias="tenant_entity_manager"/>
+
+        <!-- Adding DeleteDatabaseCommand service definition -->
+        <service id="Hakam\MultiTenancyBundle\Command\DeleteDatabaseCommand">
+            <tag name="console.command"/>
+            <argument type="service" id="Doctrine\Common\Persistence\ManagerRegistry"/>
+            <argument type="service" id="Hakam\MultiTenancyBundle\Services\DbService"/>
+        </service>
     </services>
 </container>

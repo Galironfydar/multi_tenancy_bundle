@@ -27,12 +27,19 @@ final class DeleteDatabaseCommand extends Command
     protected function configure(): void
     {
         $this
+            ->setAliases(['t:d:d'])
             ->addOption('all', null, InputOption::VALUE_NONE, 'Delete all tenant databases.')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force the deletion of the database(s).')
             ->addArgument('id', InputOption::VALUE_OPTIONAL, 'The ID of the tenant database to delete.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if (!$input->getOption('force')) {
+            $output->writeln('<error>You must use the --force option to delete a database.</error>');
+            return Command::FAILURE;
+        }
+
         if ($input->getOption('all')) {
             $this->deleteAllDatabases($output);
         } else {
