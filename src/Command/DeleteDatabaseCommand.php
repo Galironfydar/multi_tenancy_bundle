@@ -30,7 +30,7 @@ final class DeleteDatabaseCommand extends Command
             ->setAliases(['t:d:d'])
             ->addOption('all', null, InputOption::VALUE_NONE, 'Delete all tenant databases.')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force the deletion of the database(s).')
-            ->addArgument('id', InputOption::VALUE_OPTIONAL, 'The ID of the tenant database to delete.', null, 'is_int');
+            ->addArgument('id', InputOption::VALUE_OPTIONAL, 'The ID of the tenant database to delete.', null);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
