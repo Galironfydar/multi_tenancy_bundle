@@ -154,7 +154,12 @@ trait TenantDbConfigTrait
 
     public function getDsnUrl(): string
     {
-        $dbDriver = $this->getDriverType()->value ?: DriverTypeEnum::MYSQL->value;
+        $dbDriver = $this->getDriverType()->value;
+        
+        if ($dbDriver === DriverTypeEnum::SQLITE->value) {
+            return sprintf('sqlite:///%s', $this->getDbName());
+        }
+        
         $dbHost = $this->getDbHost() ?: '127.0.0.1';
         $dbPort = $this->getDbPort() ?: '3306';
         $dbUsername = $this->getDbUsername();

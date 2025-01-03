@@ -11,6 +11,7 @@ use Hakam\MultiTenancyBundle\Event\SwitchDbEvent;
 use Symfony\Bridge\Doctrine\ManagerRegistry;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Hakam\MultiTenancyBundle\Services\DbConfigService;
+use Hakam\MultiTenancyBundle\Enum\DriverTypeEnum;
 
 class DbSwitchEventListenerTest extends TestCase
 {
@@ -63,6 +64,7 @@ class DbConfig implements TenantDbConfigurationInterface
     private ?string $dbPassword;
     private ?string $dbPort;
     private ?string $dbHost;
+    private DriverTypeEnum $driverType = DriverTypeEnum::MYSQL;
 
     public function getDbName(): string
     {
@@ -151,12 +153,27 @@ class DbConfig implements TenantDbConfigurationInterface
         return $this;
     }
 
+    public function getDriverType(): DriverTypeEnum
+    {
+        return $this->driverType;
+    }
+
+    public function setDriverType(DriverTypeEnum $driverType): self
+    {
+        $this->driverType = $driverType;
+        return $this;
+    }
+
     public function getDsnUrl(): string
     {
+        if ($this->driverType === DriverTypeEnum::SQLITE) {
+            return sprintf('sqlite:///%s', $this->getDbName());
+        }
+
         $dbHost = $this->getDbHost() ?: '127.0.0.1';
         $dbPort = $this->getDbPort() ?: '3306';
         $dbUsername = $this->getDbUsername();
         $dbPassword = $this->getDbPassword() ? ':' . $this->getDbPassword() : '';
-        return sprintf('mysql://%s%s@%s:%s', $dbUsername, $dbPassword, $dbHost, $dbPort);
+        return sprintf('%s://%s%s@%s:%s', $this->driverType->value, $dbUsername, $dbPassword, $dbHost, $dbPort);
     }
 }

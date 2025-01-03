@@ -50,4 +50,9 @@ interface TenantDbConfigurationInterface
     public function setDatabaseStatus(DatabaseStatusEnum $databaseStatus): self;
 
     public function getDsnUrl(): string;
+
+    /**
+     * Get the database driver type.
+     */
+    public function getDriverType(): \Hakam\MultiTenancyBundle\Enum\DriverTypeEnum;
 }

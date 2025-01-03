@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Hakam\MultiTenancyBundle\Doctrine\ORM\TenantEntityManager;
 use Hakam\MultiTenancyBundle\Enum\DatabaseStatusEnum;
+use Hakam\MultiTenancyBundle\Enum\DriverTypeEnum;
 use Hakam\MultiTenancyBundle\Event\SwitchDbEvent;
 use Hakam\MultiTenancyBundle\Exception\MultiTenancyException;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -43,10 +44,33 @@ class DbService
      */
     public function createDatabase(TenantDbConfigurationInterface $dbConfiguration): int
     {
+        if ($dbConfiguration->getDriverType() === DriverTypeEnum::SQLITE) {
+            try {
+                // For SQLite, we just need to ensure the directory exists
+                $dbDir = dirname($dbConfiguration->getDbName());
+                if (!file_exists($dbDir)) {
+                    mkdir($dbDir, 0777, true);
+                }
+                // Touch the file to create it
+                touch($dbConfiguration->getDbName());
+                return 1;
+            } catch (\Exception $e) {
+                throw new MultiTenancyException(
+                    sprintf('Unable to create new SQLite database file %s: %s', 
+                    $dbConfiguration->getDbName(), 
+                    $e->getMessage()
+                ), 
+                    $e->getCode(), 
+                    $e
+                );
+            }
+        }
+
         $dsnParser = new DsnParser([
             'mysql' => 'pdo_mysql',
             'postgresql' => 'pdo_pgsql',
-            ]);
+            'sqlite' => 'pdo_sqlite',
+        ]);
         $tenantConnection = DriverManager::getConnection($dsnParser->parse($dbConfiguration->getDsnUrl()));
         try {
             $schemaManager = method_exists($tenantConnection, 'createSchemaManager')
@@ -93,6 +117,21 @@ class DbService
     public function dropDatabase(string $dbName): void
     {
         $connection = $this->tenantEntityManager->getConnection();
+        
+        // Handle SQLite database deletion
+        if ($connection->getDriver() instanceof \Doctrine\DBAL\Driver\PDO\SQLite\Driver) {
+            if (file_exists($dbName)) {
+                if (!unlink($dbName)) {
+                    throw new MultiTenancyException(
+                        sprintf('Unable to delete SQLite database file: %s', $dbName)
+                    );
+                }
+                return;
+            }
+            throw new MultiTenancyException(
+                sprintf('SQLite database file does not exist: %s', $dbName)
+            );
+        }
 
         $params = $connection->getParams();
 
