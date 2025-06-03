@@ -13,12 +13,40 @@
 
         <service id="Hakam\MultiTenancyBundle\Services\DbService" public="true" autowire="true"/>
 
+        <service id="Hakam\MultiTenancyBundle\Services\TenantContext" public="true"/>
+        <service id="Hakam\MultiTenancyBundle\Resolver\TenantResolverChain" public="true">
+            <argument type="tagged_iterator" tag="hakam.tenant_resolver" />
+        </service>
+
+        <service id="Hakam\MultiTenancyBundle\Resolver\SubdomainTenantResolver" public="true" autowire="true">
+            <tag name="hakam.tenant_resolver" />
+        </service>
+        <service id="Hakam\MultiTenancyBundle\Resolver\RequestAttributeTenantResolver" public="true" autowire="true">
+            <tag name="hakam.tenant_resolver" />
+        </service>
+        <service id="Hakam\MultiTenancyBundle\Resolver\HeaderTenantResolver" public="true" autowire="true">
+            <tag name="hakam.tenant_resolver" />
+        </service>
+        <service id="Hakam\MultiTenancyBundle\Resolver\SessionTenantResolver" public="true" autowire="true">
+            <tag name="hakam.tenant_resolver" />
+        </service>
+        <service id="Hakam\MultiTenancyBundle\Resolver\JwtTenantResolver" public="true" autowire="true">
+            <tag name="hakam.tenant_resolver" />
+        </service>
+
         <service id="Hakam\MultiTenancyBundle\EventListener\DbSwitchEventListener">
             <tag name="kernel.event_listener" event="Hakam\MultiTenancyBundle\Event\SwitchDbEvent"/>
             <argument type="service" id="service_container"/>
             <argument type="service" id="hakam_db_config.service"/>
             <argument type="string">%env(DATABASE_URL)%</argument>
             <argument type="service" id="logger"/>
+        </service>
+
+        <service id="Hakam\MultiTenancyBundle\EventListener\TenantResolverListener">
+            <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="Hakam\MultiTenancyBundle\Resolver\TenantResolverChain"/>
+            <argument type="service" id="Hakam\MultiTenancyBundle\Services\TenantContext"/>
+            <argument type="service" id="event_dispatcher"/>
         </service>
 
         <service id="Hakam\MultiTenancyBundle\Command\DiffCommand">
