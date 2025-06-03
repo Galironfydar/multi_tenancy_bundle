@@ -63,14 +63,16 @@ doctrine_migrations:
 #### You MUST  config the default connection and the default entity manager to use the main database. see the example above, for the complete configuration
 ####  You just need to update the config for the main EntityManager , Then the bundle will handle the rest for you.
 7. Add  the `TenantEntityManager` to your service or controller arguments.  
-8. Dispatch `SwitchDbEvent` with a custom value for your tenant db Identifier.
-    `Example new SwitchDbEvent(1)`
-9. You can switch between all tenants dbs just by dispatch the same event with different db identifier.
-10. Now your instance from `TenantEntityManager` is connected to the tenant db with Identifier = 1.
+8. Dispatch `SwitchDbEvent` with a custom value for your tenant db identifier or database name.
+    `Example new SwitchDbEvent(1)` or `new SwitchDbEvent('tenant_db_1')`
+9. You can switch between all tenants DBs just by dispatching the same event with a different identifier or name.
+10. Now your instance from `TenantEntityManager` is connected to the tenant DB with the given identifier.
 11. It's recommended having your tenant entities in a different directory from your Main entities.
 12. You can execute doctrine migration commands using our proxy commands for tenant database.
 
-        php bin/console tenant:database:create   # t:d:c  for short , To create non existing tenant dbs list 
+        php bin/console tenant:database:create   # t:d:c  for short , To create non existing tenant dbs list
+
+        php bin/console tenant:database:drop     # t:d:d  for short , To drop a tenant db by id or name
 
         php bin/console tenant:migration:diff    # t:m:d  for short , To generate migraiton for tenant db 
         
