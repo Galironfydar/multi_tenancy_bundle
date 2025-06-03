@@ -20,10 +20,28 @@ class DbConfigService
 
     public function findDbConfig(?string $identifier): TenantDbConfigurationInterface
     {
-        $dbConfigObject = $identifier ?  $this->entityRepository->findOneBy([$this->dbIdentifier => $identifier]) :
-            $this->entityRepository->findOneBy(['databaseStatus' => DatabaseStatusEnum::DATABASE_MIGRATED]);
+        if ($identifier) {
+            $dbConfigObject = $this->entityRepository->findOneBy([
+                $this->dbIdentifier => $identifier,
+            ]);
+
+            // Fallback to dbName search if not found
+            if (null === $dbConfigObject) {
+                $dbConfigObject = $this->entityRepository->findOneBy(['dbName' => $identifier]);
+            }
+        } else {
+            $dbConfigObject = $this->entityRepository->findOneBy([
+                'databaseStatus' => DatabaseStatusEnum::DATABASE_MIGRATED,
+            ]);
+        }
+
         if (null === $dbConfigObject) {
-            throw new \RuntimeException(sprintf('Tenant db repository " %s " returns NULL for identifier " %s = %s " ', get_class($this->entityRepository), $this->dbIdentifier, $identifier));
+            throw new \RuntimeException(sprintf(
+                'Tenant db repository "%s" returns NULL for identifier "%s = %s" ',
+                get_class($this->entityRepository),
+                $this->dbIdentifier,
+                $identifier
+            ));
         }
 
         if (!$dbConfigObject instanceof TenantDbConfigurationInterface) {
