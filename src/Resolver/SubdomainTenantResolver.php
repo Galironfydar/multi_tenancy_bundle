@@ -6,7 +6,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 class SubdomainTenantResolver implements TenantResolverInterface
 {
-    public function __construct(private string $baseHost)
+    public function __construct(private string $baseHost = '')
     {
     }
 
