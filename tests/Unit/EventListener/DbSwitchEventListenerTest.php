@@ -59,6 +59,64 @@ class DbSwitchEventListenerTest extends TestCase
         // trigger the event and test the result
         $listener->onHakamMultiTenancyBundleEventSwitchDbEvent($testEvent);
     }
+
+    public function testLogsDoNotExposeSensitiveInformation(): void
+    {
+        $mockContainer = $this->createMock(ContainerInterface::class);
+        $mockDbConfigService = $this->createMock(DbConfigService::class);
+
+        $captured = [];
+        $mockLogger = $this->createMock(LoggerInterface::class);
+        $mockLogger->expects($this->exactly(2))
+            ->method('info')
+            ->willReturnCallback(function ($message, array $context = []) use (&$captured) {
+                $captured[] = ['message' => $message, 'context' => $context];
+            });
+
+        $listener = new DbSwitchEventListener(
+            $mockContainer,
+            $mockDbConfigService,
+            'mysql://main_user:main_pass@127.0.0.1:3306/db',
+            $mockLogger
+        );
+
+        $testEvent = new SwitchDbEvent(1);
+        $mockDbConfig = new DbConfig();
+        $mockDbConfig->setDbName('tenant_db');
+        $mockDbConfig->setDbUsername('tenant_user');
+        $mockDbConfig->setDbPassword('tenant_pass');
+        $mockDbConfig->setDbHost('localhost');
+        $mockDbConfig->setDbPort('3306');
+
+        $mockDbConfigService->expects($this->once())
+            ->method('findDbConfig')
+            ->willReturn($mockDbConfig);
+
+        $mockTenantConnection = $this->createMock(TenantConnection::class);
+        $mockTenantConnection->expects($this->once())
+            ->method('switchConnection');
+
+        $mockDoctrine = $this->createMock(ManagerRegistry::class);
+        $mockDoctrine->expects($this->once())
+            ->method('getConnection')
+            ->with('tenant')
+            ->willReturn($mockTenantConnection);
+        $mockContainer->expects($this->once())
+            ->method('get')
+            ->with('doctrine')
+            ->willReturn($mockDoctrine);
+
+        $listener->onHakamMultiTenancyBundleEventSwitchDbEvent($testEvent);
+
+        $this->assertCount(2, $captured);
+        foreach ($captured as $log) {
+            $logStr = json_encode($log['context']);
+            $this->assertStringNotContainsString('tenant_user', $logStr);
+            $this->assertStringNotContainsString('tenant_pass', $logStr);
+            $this->assertStringNotContainsString('main_user', $logStr);
+            $this->assertStringNotContainsString('main_pass', $logStr);
+        }
+    }
 }
 
 class DbConfig implements TenantDbConfigurationInterface
