@@ -10,6 +10,10 @@ use Doctrine\DBAL\Exception;
  */
 class TenantConnection extends Connection
 {
+    /**
+     * @var array<string, \Doctrine\DBAL\Driver\Connection>
+     */
+    private static array $pool = [];
     /** @var mixed */
     protected array $params = [];
     /** @var bool */
@@ -60,8 +64,7 @@ class TenantConnection extends Connection
     public function switchConnection(array $params): bool
     {
         $this->close();
-        
-        // Ensure we have the correct driver
+
         if (!isset($params['driver'])) {
             $params['driver'] = 'pdo_sqlite';
         }
@@ -72,7 +75,14 @@ class TenantConnection extends Connection
         }
         
         $this->params = $params;
-        $this->_conn = $this->_driver->connect($params);
+
+        $key = md5(json_encode($params));
+        if (isset(self::$pool[$key])) {
+            $this->_conn = self::$pool[$key];
+        } else {
+            $this->_conn = $this->_driver->connect($params);
+            self::$pool[$key] = $this->_conn;
+        }
         
         if ($this->autoCommit === false) {
             $this->beginTransaction();
@@ -116,7 +126,13 @@ class TenantConnection extends Connection
             $params = $this->prepareSqliteParams($params);
         }
         
-        $this->_conn = $this->_driver->connect($params);
+        $key = md5(json_encode($params));
+        if (isset(self::$pool[$key])) {
+            $this->_conn = self::$pool[$key];
+        } else {
+            $this->_conn = $this->_driver->connect($params);
+            self::$pool[$key] = $this->_conn;
+        }
         $this->isConnected = true;
     }
 }
