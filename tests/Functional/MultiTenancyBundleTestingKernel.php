@@ -33,6 +33,7 @@ class MultiTenancyBundleTestingKernel extends Kernel
     {
         $loader->load(function (ContainerBuilder $container) {
             $container->register('annotation_reader', AnnotationReader::class);
+            $container->register('logger', \Psr\Log\NullLogger::class);
             
             // Configure Doctrine
             $container->loadFromExtension('doctrine', [

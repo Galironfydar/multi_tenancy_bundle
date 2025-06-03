@@ -12,6 +12,7 @@ use Symfony\Bridge\Doctrine\ManagerRegistry;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Hakam\MultiTenancyBundle\Services\DbConfigService;
 use Hakam\MultiTenancyBundle\Enum\DriverTypeEnum;
+use Psr\Log\LoggerInterface;
 
 class DbSwitchEventListenerTest extends TestCase
 {
@@ -20,9 +21,12 @@ class DbSwitchEventListenerTest extends TestCase
         // mock the necessary dependencies
         $mockContainer = $this->createMock(ContainerInterface::class);
         $mockDbConfigService = $this->createMock(DbConfigService::class);
+        $mockLogger = $this->createMock(LoggerInterface::class);
+        $mockLogger->expects($this->exactly(2))
+            ->method('info');
 
         // create a test instance of the listener
-        $listener = new DbSwitchEventListener($mockContainer, $mockDbConfigService, 'test_database_url');
+        $listener = new DbSwitchEventListener($mockContainer, $mockDbConfigService, 'test_database_url', $mockLogger);
 
         // create a test event
         $testDbIndex = 1;

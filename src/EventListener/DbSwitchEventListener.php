@@ -7,6 +7,7 @@ use Hakam\MultiTenancyBundle\Services\DbConfigService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Hakam\MultiTenancyBundle\Enum\DriverTypeEnum;
+use Psr\Log\LoggerInterface;
 
 /**
  * @author Ramy Hakam <pencilsoft1@gmail.com>
@@ -17,7 +18,8 @@ class DbSwitchEventListener implements EventSubscriberInterface
     public function __construct(
         private ContainerInterface $container,
         private DbConfigService    $dbConfigService,
-        private string             $databaseURL
+        private string             $databaseURL,
+        private LoggerInterface    $logger
     )
     {
     }
@@ -33,6 +35,12 @@ class DbSwitchEventListener implements EventSubscriberInterface
     public function onHakamMultiTenancyBundleEventSwitchDbEvent(SwitchDbEvent $switchDbEvent): void
     {
         $dbConfig = $this->dbConfigService->findDbConfig($switchDbEvent->getDbIndex());
+        $this->logger->info('Tenant switch requested', [
+            'db_index' => $switchDbEvent->getDbIndex(),
+            'db_name' => $dbConfig->getDbName(),
+            'driver' => $dbConfig->getDriverType()->value,
+        ]);
+
         $tenantConnection = $this->container->get('doctrine')->getConnection('tenant');
         
         // Handle SQLite differently since it doesn't use host/port/user/pass
@@ -55,6 +63,12 @@ class DbSwitchEventListener implements EventSubscriberInterface
         }
         
         $tenantConnection->switchConnection($params);
+        $this->logger->info('Tenant connection switched', [
+            'dbname' => $params['dbname'],
+            'driver' => $params['driver'],
+            'host' => $params['host'] ?? null,
+            'port' => $params['port'] ?? null,
+        ]);
     }
 
     private function parseDatabaseUrl(string $databaseURL): array
